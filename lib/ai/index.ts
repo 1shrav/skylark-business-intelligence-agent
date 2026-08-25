@@ -1,18 +1,31 @@
-import OpenAI from 'openai';
+﻿import OpenAI from 'openai';
 import { config } from '../config';
 import { QueryIntent, QueryIntentType } from '../../types/agent';
 
-const openai = new OpenAI({
-  apiKey: config.openai.apiKey,
-  baseURL: config.openai.baseURL,
-});
+// Lazy initialization to avoid crashes during build when credentials are missing
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: config.groq.apiKey || 'dummy-key-for-build',
+      baseURL: config.groq.baseURL,
+    });
+  }
+  return openaiClient;
+}
 
 export async function classifyIntent(query: string): Promise<QueryIntent> {
   try {
+    if (!config.groq.apiKey) {
+      return fallbackIntentClassification(query);
+    }
+
+    const openai = getOpenAIClient();
     const systemPrompt = 'You are an intent classifier. Classify queries into: pipeline_query, work_order_query, cross_board_comparison, leadership_update, or sector_analysis. Return JSON with: type, requiredDatasets (array), filters (object), analysisType, confidence.';
     
     const response = await openai.chat.completions.create({
-      model: config.openai.model,
+      model: config.groq.model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: query },
@@ -61,6 +74,11 @@ export async function explainMetrics(query: string, metrics: any, dataQuality?: 
   // so a temporary AI-provider outage never prevents the user getting an answer.
   if (query) return createShortReport(metrics, dataQuality);
   try {
+    if (!config.groq.apiKey) {
+      return createShortReport(metrics, dataQuality);
+    }
+
+    const openai = getOpenAIClient();
     let summary = 'Based on your Monday.com data:\n\n';
     
     if (metrics.dealCount !== undefined) {
@@ -86,7 +104,7 @@ export async function explainMetrics(query: string, metrics: any, dataQuality?: 
     const userPrompt = 'Query: "' + query + '"\n\nData summary:\n' + summary + '\n\nProvide analysis:';
 
     const response = await openai.chat.completions.create({
-      model: config.openai.model,
+      model: config.groq.model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
