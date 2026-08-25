@@ -36,7 +36,10 @@ export async function processQuery(query: string): Promise<QueryResponse> {
       case 'pipeline_query':
       case 'sector_analysis':
         metrics = calculatePipelineMetrics(normalizedDeals.data, normalizedDeals.qualityIssues);
-        dataQuality = metrics.dataQuality;
+        dataQuality = { 
+          ...metrics.dataQuality,
+          successRate: normalizedDeals.successRate 
+        };
         
         if (intent.filters.sectors && intent.filters.sectors.length > 0) {
           const sector = intent.filters.sectors[0];
@@ -50,7 +53,10 @@ export async function processQuery(query: string): Promise<QueryResponse> {
 
       case 'work_order_query':
         metrics = calculateWorkOrderMetrics(normalizedWorkOrders.data, normalizedWorkOrders.qualityIssues);
-        dataQuality = metrics.dataQuality;
+        dataQuality = { 
+          ...metrics.dataQuality,
+          successRate: normalizedWorkOrders.successRate 
+        };
         break;
 
       case 'cross_board_comparison':
@@ -65,9 +71,9 @@ export async function processQuery(query: string): Promise<QueryResponse> {
         } else {
           metrics = compareSectorPerformance(normalizedDeals.data, normalizedWorkOrders.data, sector);
         }
-        dataQuality = normalizedDeals.qualityIssues.length > 0 || normalizedWorkOrders.qualityIssues.length > 0
-          ? { successRate: Math.min(normalizedDeals.successRate, normalizedWorkOrders.successRate) }
-          : undefined;
+        dataQuality = { 
+          successRate: Math.min(normalizedDeals.successRate, normalizedWorkOrders.successRate) 
+        };
         break;
 
       case 'leadership_update':
