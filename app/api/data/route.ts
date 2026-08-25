@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { fetchDeals, fetchWorkOrders } from '@/lib/monday/client';
 import { normalizeDeals, normalizeWorkOrders } from '@/lib/normalize';
 import { calculatePipelineMetrics, calculateWorkOrderMetrics } from '@/lib/analytics';
@@ -207,13 +207,26 @@ function generateGrowthRecommendations(
 
 export async function GET() {
   try {
+    console.log('[API /data] Starting data fetch...');
+    console.log('[API /data] Environment:', process.env.NODE_ENV);
+    console.log('[API /data] MONDAY_API_TOKEN present:', !!process.env.MONDAY_API_TOKEN);
+    console.log('[API /data] MONDAY_DEALS_BOARD_ID:', process.env.MONDAY_DEALS_BOARD_ID);
+    console.log('[API /data] MONDAY_WORK_ORDERS_BOARD_ID:', process.env.MONDAY_WORK_ORDERS_BOARD_ID);
+    
     // Fetch raw data
     const rawDeals = await fetchDeals();
+    console.log('[API /data] Raw deals fetched:', rawDeals.length);
+    
     const rawWorkOrders = await fetchWorkOrders();
+    console.log('[API /data] Raw work orders fetched:', rawWorkOrders.length);
 
     // Normalize data
     const normalizedDeals = normalizeDeals(rawDeals);
+    console.log('[API /data] Deals normalized:', normalizedDeals.data.length);
+    console.log('[API /data] Deals success rate:', normalizedDeals.successRate);
+    
     const normalizedWorkOrders = normalizeWorkOrders(rawWorkOrders);
+    console.log('[API /data] Work orders normalized:', normalizedWorkOrders.data.length);
 
     // Calculate metrics
     const pipelineMetrics = calculatePipelineMetrics(normalizedDeals.data, normalizedDeals.qualityIssues);
