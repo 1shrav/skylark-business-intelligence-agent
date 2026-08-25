@@ -91,8 +91,15 @@ export async function processQuery(query: string): Promise<QueryResponse> {
             completionRate: workOrderMetrics.completionRate,
           },
         };
+        // Calculate weighted success rate based on actual records processed
+        const totalDeals = normalizedDeals.data.length;
+        const totalWorkOrders = normalizedWorkOrders.data.length;
+        const totalRecords = totalDeals + totalWorkOrders;
+        
         dataQuality = {
-          successRate: Math.min(normalizedDeals.successRate, normalizedWorkOrders.successRate),
+          successRate: totalRecords > 0
+            ? (totalDeals * normalizedDeals.successRate + totalWorkOrders * normalizedWorkOrders.successRate) / totalRecords
+            : 1, // If no records at all, show 100% (not 0%)
         };
         break;
 
