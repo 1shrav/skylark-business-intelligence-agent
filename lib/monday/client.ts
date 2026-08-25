@@ -33,8 +33,8 @@ export interface RawWorkOrder {
 }
 
 const DEALS_QUERY = `
-  query GetDeals($boardId: ID!) {
-    boards(ids: [$boardId]) {
+  query GetDeals($boardId: [ID!]) {
+    boards(ids: $boardId) {
       items_page(limit: 500) {
         items {
           id
@@ -53,8 +53,8 @@ const DEALS_QUERY = `
 `;
 
 const WORK_ORDERS_QUERY = `
-  query GetWorkOrders($boardId: ID!) {
-    boards(ids: [$boardId]) {
+  query GetWorkOrders($boardId: [ID!]) {
+    boards(ids: $boardId) {
       items_page(limit: 500) {
         items {
           id
@@ -79,15 +79,20 @@ export async function fetchDeals(): Promise<RawDeal[]> {
     console.log('[Monday Client] API Token present:', !!config.monday.apiToken);
     console.log('[Monday Client] API Token length:', config.monday.apiToken?.length || 0);
     
+    const boardIdArray = [parseInt(config.monday.dealsBoardId, 10)];
+    console.log('[Monday Client] Board ID as array:', boardIdArray);
+    
     const data: any = await client.request(DEALS_QUERY, {
-      boardId: config.monday.dealsBoardId,
+      boardId: boardIdArray,
     });
     
     console.log('[Monday Client] Response received');
-    console.log('[Monday Client] Boards array:', data.boards?.length || 0);
+    console.log('[Monday Client] Response data:', JSON.stringify(data).substring(0, 200));
+    console.log('[Monday Client] Boards array length:', data.boards?.length || 0);
     
     if (!data.boards || data.boards.length === 0) {
       console.error('[Monday Client] No boards returned - possible auth issue or wrong board ID');
+      console.error('[Monday Client] Full response:', JSON.stringify(data));
       return [];
     }
     
@@ -105,6 +110,7 @@ export async function fetchDeals(): Promise<RawDeal[]> {
     if (error.response) {
       console.error('[Monday Client] Response status:', error.response.status);
       console.error('[Monday Client] Response errors:', JSON.stringify(error.response.errors));
+      console.error('[Monday Client] Response data:', JSON.stringify(error.response.data));
     }
     throw new Error('Monday.com API error: Unable to fetch deals');
   }
@@ -115,8 +121,10 @@ export async function fetchWorkOrders(): Promise<RawWorkOrder[]> {
     console.log('[Monday Client] Fetching work orders...');
     console.log('[Monday Client] Board ID:', config.monday.workOrdersBoardId);
     
+    const boardIdArray = [parseInt(config.monday.workOrdersBoardId, 10)];
+    
     const data: any = await client.request(WORK_ORDERS_QUERY, {
-      boardId: config.monday.workOrdersBoardId,
+      boardId: boardIdArray,
     });
     
     const items = data.boards[0]?.items_page?.items || [];
