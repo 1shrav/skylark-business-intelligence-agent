@@ -35,7 +35,7 @@ export interface RawWorkOrder {
 const DEALS_QUERY = `
   query GetDeals($boardId: ID!) {
     boards(ids: [$boardId]) {
-      items_page {
+      items_page(limit: 500) {
         items {
           id
           name
@@ -55,7 +55,7 @@ const DEALS_QUERY = `
 const WORK_ORDERS_QUERY = `
   query GetWorkOrders($boardId: ID!) {
     boards(ids: [$boardId]) {
-      items_page {
+      items_page(limit: 500) {
         items {
           id
           name
